@@ -7,7 +7,7 @@
 
 ##################################
 # environment variables
-version="1.1"
+version="1.2"
 author="Chris Holt, @humor4fun"
 date="2016-05-02"
 usage="Slack Backup by $author 
@@ -18,8 +18,18 @@ Usage:
 	slack-backup.sh -t token [options]
 
 Options:
+	-a | --all
+		Implies --fetch. Use the web APIs to force a download of ALL Public Channels, Private Groups (the user has access to) and Direct Message conversations.
+		Note: This might take quite a wile! Use with caution.	
+	
 	-c | --public-channels FILE 
 		FILE to read list of channel names for pulling Public Channel conversaitons. 
+
+	-f | --fetch
+		Fetches the user lists for public, private and DM messages. Stores them in local files for later use. 
+
+	-F | --fetch-only
+		Like --fetch, but quits the remaining script execution afterwards. This will still perform all of the setup but will not execute the conversation download or cleaning.
 	
 	-g | --private-groups FILE 
 		FILE to read list of group names for pulling Private Group conversaitons. 
@@ -56,11 +66,16 @@ printf "Slack-Backup $version by $author\n"
 # as in the --default example).
 slack_token="x"
 dm_file="x"
+dm_do=false
 public_file="x"
+public_do=false
 private_file="x"
+private_do=false
 cont=false
 setup=true
 help=false
+fetch=false
+fetch_only=false
 
 while [[ $# > 0 ]]
 do
@@ -78,17 +93,34 @@ case $key in
 
     -m|--direct-messages)
     dm_file="$2"
+    dm_do=true
     shift # past argument
     ;;
 
     -c|--public-channels)
     public_file="$2"
+    public_do=true
     shift # past argument
     ;;
 
     -g|--private-groups)
     private_file="$2"
+    private_do=true
     shift # past argument
+    ;;
+
+    -a|--all) # parse all userIDs
+    all=true
+    fetch=true
+    ;;
+
+    -f|--fetch)
+    fetch=true
+    ;;
+
+    -F|--fetch-only)
+    fetch=true
+    fetch_only=true
     ;;
 
     -h|--help)
@@ -134,19 +166,19 @@ warn=false
 if [[ $private_file == "x" ]]
  then
 	printf "WARNING: proceeding without the list of Private Groups."
-	$warn=true
+	warn=true
 fi
 
 if [[ $public_file == "x" ]]
  then
 	printf "WARNING: proceeding without the list of Public Channels."
-	$warn=true
+	warn=true
 fi
 
 if [[ $dm_file == "x" ]]
  then
 	printf "WARNING: proceeding without the list of Direct Message personnel."
-	$warn=true
+	warn=true
 fi
 
 if ( $warn && $cont ) #check for suppression
@@ -173,18 +205,18 @@ if ( $setup )
 		npm install slack-history-export -g
 fi
 
-printf "\nSetting up working environment..."
+printf "\nSetting up working environment...\n"
 	directory="slack-backup_`date +%Y-%m-%d-%H.%M.%S`"
 	debug="$directory/_debug"
 	mkdir $directory $debug
 	#slack_token=$1
-
+printf "done.\n"
 ##################################
 
 
 ##################################
 #check Slack token for auth
-printf "Checking Slack Token for valid auth..."
+printf "Checking Slack Token for valid auth...\n"
 	auth=`wget https://slack.com/api/auth.test?token=$slack_token | grep -m 1 "\"ok\": true,"`
 	if ! ( $auth )
 	 then
@@ -204,11 +236,11 @@ printf "done.\n"
 	## and the last line that shows:
 	#}
 # from all files created as a result of the wget api calls.
-printf "\nGetting Channel meta data..."
+printf "\nGetting Channel meta data...\n"
 	wget https://slack.com/api/channels.list?token=$slack_token -O "channels.list.json"
 printf "done.\n"
 
-printf "\nCleaning Channel meta data..."
+printf "\nCleaning Channel meta data...\n"
 	sed 's/{\"ok\":true,\"channels\"://1w tmp.json' channels.list.json
 	sed '$ s/.$//w channels.json' tmp.json
 	rm -v tmp.json 
@@ -216,11 +248,11 @@ printf "\nCleaning Channel meta data..."
 	mv -v channels.json $directory
 printf "done.\n"
 
-printf "\nGetting Users meta data..."
+printf "\nGetting Users meta data...\n"
 	wget https://slack.com/api/users.list?token=$slack_token -O "users.list.json"	
 printf "done.\n"
 
-printf "\nCleaning Users meta data..."
+printf "\nCleaning Users meta data...\n"
 	sed 's/{\"ok\":true,\"members\"://1w tmp.json' users.list.json
 	sed '$ s/.$//w users.json' tmp.json
 	rm -v tmp.json 
@@ -228,11 +260,11 @@ printf "\nCleaning Users meta data..."
 	mv -v users.json $directory
 printf "done.\n"
 
-printf "\nGetting IntegrationLogs data..."
+printf "\nGetting IntegrationLogs data...\n"
 	wget https://slack.com/api/team.integrationLogs.list?token=$slack_token -O "team.integrationLogs.json"
 printf "done.\n"
 	
-printf "\nCleaning IntegrationLogs data..."
+printf "\nCleaning IntegrationLogs data...\n"
 	sed 's/{\"ok\":true,\"members\"://1w tmp.json' team.IntegrationLogs.json
 	printf "[\n\n]" >> integration_logs.json
 		#most users won't have slack-admin rights for this, check for an error and if it occured then just write a blank file "[\n]"
@@ -243,13 +275,13 @@ printf "\nCleaning IntegrationLogs data..."
 	mv -v integration_logs.json $directory
 printf "done.\n"
 
-printf "\nGetting optional meta data..."
+printf "\nGetting optional meta data...\n"
 	wget https://slack.com/api/team.info?token=$slack_token -O "$debug/team.info.json"
 	wget https://slack.com/api/reminders.list?token=$slack_token -O "$debug/reminders.list.json"
 	wget https://slack.com/api/emoji.list?token=$slack_token -O "$debug/emoji.list.json"
 printf "done.\n"
 
-printf "\nGetting list of all chat threads..."
+printf "\nGetting list of all chat threads...\n"
 	wget https://slack.com/api/im.list?token=$slack_token -O "$debug/im.list.json"
 	wget https://slack.com/api/groups.list?token=$slack_token -O "$debug/groups.list.json"
 	wget https://slack.com/api/channels.list?token=$slack_token -O "$debug/channels.list.json"
@@ -257,55 +289,73 @@ printf "\nGetting list of all chat threads..."
 		#slack-history-export can't handle these yet
 	#wget https://slack.com/api/mpim.history?token=$slack_token&channel=$mpim_channel -O "$debug/mpim.history.json"
 printf "done.\n"
-
-printf "\nParsing chat thread lists..."
-	#python parse-json.py im.list.json > dm_list
-	#mv -v im.list.json $debug
-	#python parse-json.py groups.list.json > private_list
-	#mv -v groups.list.json $debug
-	#python parse-json.py channels.list.json > public_list
-	#mv -v channels.list.json $debug
-printf "done.\n"
 ##################################
 
 
 ##################################
 # get message data and parse it through the first pass of cleansing
-printf "\nGetting Direct Messages..."
-	mapfile -t dm_list < $dm_file
-	#generate a list of IMs from the im.list.json file
-	for dm in "${dm_list[@]}"
-	do
-		printf "\nDM with: $dm\n"
-		dir="$directory/$dm"
-		mkdir $dir
-		slack-history-export --token $slack_token --type 'dm' --username $dm --directory $dir #--filename $dm
-	done
-printf "done.\n"
 
-printf "\nGetting Private channels..."
-	mapfile -t private_list < $private_file
-	#generate a list of channels from the groups.list.json file
-	for dm in "${private_list[@]}"
-	do
-		printf "\nPrivate Channel: $dm\n"
-		dir="$directory/$dm"
-		mkdir $dir
-		slack-history-export --token $slack_token --type 'group' --group $dm --directory $dir #--filename "$dm"
-	done
-printf "done.\n"
+if ( $fetch || $all )
+ then
+	printf "\nParsing chat thread lists...\n"
+		#python parse-json.py im.list.json > $dm_file
+		#mv -v im.list.json $debug
+		#python parse-json.py groups.list.json > $private_file
+		#mv -v groups.list.json $debug
+		#python parse-json.py channels.list.json > $public_file
+		#mv -v channels.list.json $debug
+	printf "done.\n"
 
-printf "\nGetting Public channels..."
-	mapfile -t public_list < $public_file
-	#generate a list of channels from the channels.list.json file
-	for dm in "${public_list[@]}"
-	do
-		printf "\nPublic Channel: $dm\n"
-		dir="$directory/$dm"
-		mkdir $dir
-		slack-history-export --token $slack_token --type 'channel' --channel $dm --directory $dir #--filename "$dm"
-	done
-printf "done.\n"
+	if ( $fetch_only )
+	 then
+		exit 200
+	fi
+fi
+
+if ( $dm_do || $all)
+ then
+	printf "\nGetting Direct Messages...\n"
+		mapfile -t dm_list < $dm_file
+		#generate a list of IMs from the im.list.json file
+		for dm in "${dm_list[@]}"
+		do
+			printf "\nDM with: $dm\n"
+			dir="$directory/$dm"
+			mkdir $dir
+			slack-history-export --token $slack_token --type 'dm' --username $dm --directory $dir #--filename $dm
+		done
+	printf "done.\n"
+fi
+
+if ( $private_do || $all)
+ then
+	printf "\nGetting Private channels...\n"
+		mapfile -t private_list < $private_file
+		#generate a list of channels from the groups.list.json file
+		for dm in "${private_list[@]}"
+		do
+			printf "\nPrivate Channel: $dm\n"
+			dir="$directory/$dm"
+			mkdir $dir
+			slack-history-export --token $slack_token --type 'group' --group $dm --directory $dir #--filename "$dm"
+		done
+	printf "done.\n"
+fi
+
+if ( $public_do || $all)
+ then
+	printf "\nGetting Public channels...\n"
+		mapfile -t public_list < $public_file
+		#generate a list of channels from the channels.list.json file
+		for dm in "${public_list[@]}"
+		do
+			printf "\nPublic Channel: $dm\n"
+			dir="$directory/$dm"
+			mkdir $dir
+			slack-history-export --token $slack_token --type 'channel' --channel $dm --directory $dir #--filename "$dm"
+		done
+	printf "done.\n"
+fi
 
 printf "\nFinished downloading history.\n"
 ##################################
@@ -313,13 +363,13 @@ printf "\nFinished downloading history.\n"
 
 ##################################
 # clean up the data
-printf "\nGetting prettifying resources..."
+printf "\nGetting prettifying resources...\n"
 	cd $directory
 	wget "https://gist.githubusercontent.com/dharmastyle/5d1e8239c5684938db0b/raw/cf1afe32967c6b497ed1ed97ca4a8ab5ee3df953/slack-json-2-html.php"
 	chmod 777 slack-json-2-html.php
 printf "done.\n"
 
-printf "\nMaking things pretty..."
+printf "\nMaking things pretty...\n"
 	php slack-json-2-html.php
 printf "done.\n"
 ##################################
@@ -339,4 +389,3 @@ printf "done.\n"
 
 printf "\nCompleted Task.\n"
 exit 200
-
