@@ -7,7 +7,7 @@
 
 ##################################
 # environment variables
-version="1.3"
+version="1.32"
 author="Chris Holt, @humor4fun"
 date="2016-05-02"
 usage="Slack Backup by $author 
@@ -24,6 +24,9 @@ Options:
 	
 	-c | --public-channels FILE 
 		FILE to read list of channel names for pulling Public Channel conversaitons. 
+
+	-d | --debug-on
+		Keep the Debug folder after the script executes. Defaults to OFF so this folder will be deleted, saving disk space.
 
 	-f | --fetch
 		Fetches the user lists for public, private and DM messages. Stores them in local files for later use. 
@@ -77,6 +80,7 @@ help=false
 fetch=false
 fetch_only=false
 all=false
+debug_off=true
 
 while [[ $# > 0 ]]
 do
@@ -134,6 +138,10 @@ case $key in
     
     -s|--bypass-setup)
     setup=false
+    ;;
+
+    -d|--debug-on)
+    debug_off=false;
     ;;
 
     *) # unknown option
@@ -316,13 +324,11 @@ if ( $dm_do || $all)
  then
 	printf "\nGetting Direct Messages...\n"
 		mapfile -t dm_list < $dm_file
-		#generate a list of IMs from the im.list.json file
 		for dm in "${dm_list[@]}"
 		do
 			printf "\nDM with: $dm\n"
 			dir="$directory/$dm"
 			mkdir $dir
-		printf "token: $slack_token\nusername: $dm\ndirectory: $dir\n"
 			slack-history-export --token $slack_token --username $dm --directory $dir #--filename $dm
 			if [[ `ls -1 $dir | wc -l` -eq 0 ]]
 			 then
@@ -336,7 +342,6 @@ if ( $private_do || $all)
  then
 	printf "\nGetting Private channels...\n"
 		mapfile -t private_list < $private_file
-		#generate a list of channels from the groups.list.json file
 		for dm in "${private_list[@]}"
 		do
 			printf "\nPrivate Channel: $dm\n"
@@ -351,7 +356,6 @@ if ( $public_do || $all)
  then
 	printf "\nGetting Public channels...\n"
 		mapfile -t public_list < $public_file
-		#generate a list of channels from the channels.list.json file
 		for dm in "${public_list[@]}"
 		do
 			printf "\nPublic Channel: $dm\n"
@@ -389,9 +393,12 @@ printf "\nCleaning up..."
 	mv -v slack2html/ $directory/
 	cd $directory
 	mv slack2html _slacklog_ui
+	if ( $debug_off ))
+	 then
+		rm -r $debug
+	fi
 printf "done.\n"
 ##################################
 
 printf "\nCompleted Task.\n"
 exit 200
-
