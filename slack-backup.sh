@@ -7,7 +7,7 @@
 
 ##################################
 # environment variables
-version="1.2"
+version="1.3"
 author="Chris Holt, @humor4fun"
 date="2016-05-02"
 usage="Slack Backup by $author 
@@ -76,6 +76,7 @@ setup=true
 help=false
 fetch=false
 fetch_only=false
+all=false
 
 while [[ $# > 0 ]]
 do
@@ -217,7 +218,7 @@ printf "done.\n"
 ##################################
 #check Slack token for auth
 printf "Checking Slack Token for valid auth...\n"
-	auth=`wget https://slack.com/api/auth.test?token=$slack_token | grep -m 1 "\"ok\": true,"`
+	auth=wget https://slack.com/api/auth.test?token=$slack_token | grep -m 1 "\"ok\": true,"
 	if ! ( $auth )
 	 then
 		printf "API Token not authorized. Quitting."
@@ -287,7 +288,6 @@ printf "\nGetting list of all chat threads...\n"
 	wget https://slack.com/api/channels.list?token=$slack_token -O "$debug/channels.list.json"
 	#wget https://slack.com/api/mpim.list?token=$slack_token -O "$debug/mpim.list.json"
 		#slack-history-export can't handle these yet
-	#wget https://slack.com/api/mpim.history?token=$slack_token&channel=$mpim_channel -O "$debug/mpim.history.json"
 printf "done.\n"
 ##################################
 
@@ -298,12 +298,12 @@ printf "done.\n"
 if ( $fetch || $all )
  then
 	printf "\nParsing chat thread lists...\n"
-		#python parse-json.py im.list.json > $dm_file
-		#mv -v im.list.json $debug
-		#python parse-json.py groups.list.json > $private_file
-		#mv -v groups.list.json $debug
-		#python parse-json.py channels.list.json > $public_file
-		#mv -v channels.list.json $debug
+		cat $debug/users.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > dm.list
+		dm_file="dm.list"
+		cat $debug/groups.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > dm.list
+		dm_file="groups.list"
+		cat $debug/channels.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > dm.list
+		dm_file="dm.list"
 	printf "done.\n"
 
 	if ( $fetch_only )
@@ -322,7 +322,12 @@ if ( $dm_do || $all)
 			printf "\nDM with: $dm\n"
 			dir="$directory/$dm"
 			mkdir $dir
-			slack-history-export --token $slack_token --type 'dm' --username $dm --directory $dir #--filename $dm
+		printf "token: $slack_token\nusername: $dm\ndirectory: $dir\n"
+			slack-history-export --token $slack_token --username $dm --directory $dir #--filename $dm
+			if [[ `ls -1 $dir | wc -l` -eq 0 ]]
+			 then
+				rm -r $dir
+			fi
 		done
 	printf "done.\n"
 fi
@@ -337,7 +342,7 @@ if ( $private_do || $all)
 			printf "\nPrivate Channel: $dm\n"
 			dir="$directory/$dm"
 			mkdir $dir
-			slack-history-export --token $slack_token --type 'group' --group $dm --directory $dir #--filename "$dm"
+			slack-history-export --token $slack_token --group $dm --directory $dir #--filename "$dm"
 		done
 	printf "done.\n"
 fi
@@ -352,7 +357,7 @@ if ( $public_do || $all)
 			printf "\nPublic Channel: $dm\n"
 			dir="$directory/$dm"
 			mkdir $dir
-			slack-history-export --token $slack_token --type 'channel' --channel $dm --directory $dir #--filename "$dm"
+			slack-history-export --token $slack_token --channel $dm --directory $dir #--filename "$dm"
 		done
 	printf "done.\n"
 fi
@@ -389,3 +394,4 @@ printf "done.\n"
 
 printf "\nCompleted Task.\n"
 exit 200
+
