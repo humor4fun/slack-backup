@@ -8,7 +8,7 @@
 ##################################
 # environment variables
 START=$(date +%s)
-version="1.79"
+version="1.80"
 author="Chris Holt, @humor4fun"
 date="2016-05-03"
 usage="Slack Backup by $author 
@@ -295,9 +295,9 @@ printf "done.\n"
 if ( $fetch )
  then
 	printf "Parsing chat thread lists for names..."	
-		cat $debug/users.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > $dm_file 1>$logs/parse_users.log 2>&1
-		cat $debug/groups.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > $private_file 1>$logs/parse_groups.log 2>&1
-		cat $debug/channels.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > $public_file 1>$logs/parse_channels.log 2>&1
+		cat $debug/users.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > $dm_file
+		cat $debug/groups.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > $private_file
+		cat $debug/channels.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > $public_file
 	printf "done.\n"
 
 	if ( $fetch_only )
@@ -306,7 +306,7 @@ if ( $fetch )
 	fi
 fi
 
-if ( $dm_do || $all)
+if ( $dm_do || $all )
  then
 	printf "Getting Direct Messages..."
 		rDIR=0
@@ -329,7 +329,7 @@ if ( $dm_do || $all)
 	printf "done!\n"
 fi
 
-if ( $private_do || $all)
+if ( $private_do || $all )
  then
 	printf "Getting Private Groups..."
 		rPRIV=0
@@ -352,7 +352,7 @@ if ( $private_do || $all)
 	printf "done!\n"
 fi
 
-if ( $public_do || $all)
+if ( $public_do || $all )
  then
 	printf "Getting Public Channels..."
 		rPUB=0
@@ -396,7 +396,7 @@ printf "\nCleaning up..."
 
 	if ( $debug_off )
 	 then
-		rm -r $debug 1>$logs/cleanup08.log 2>&1
+		rm -r $debug 1>$logs/cleanup05.log 2>&1
 	fi
 printf "done.\n"
 printf "\nCompleted Task.\n"
