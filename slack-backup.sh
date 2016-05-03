@@ -7,7 +7,8 @@
 
 ##################################
 # environment variables
-version="1.33"
+START=$(date +%s)
+version="1.79"
 author="Chris Holt, @humor4fun"
 date="2016-05-03"
 usage="Slack Backup by $author 
@@ -19,7 +20,7 @@ Usage:
 
 Options:
 	-a | --all
-		Implies --fetch. Use the web APIs to force a download of ALL Public Channels, Private Groups (the user has access to) and Direct Message conversations.
+		Implies --fetch --bypass-warnings. Use the web APIs to force a download of ALL Public Channels, Private Groups (the user has access to) and Direct Message conversations.
 		Note: This might take quite a wile! Use with caution.	
 	
 	-c | --public-channels FILE 
@@ -64,9 +65,7 @@ printf "Slack-Backup $version by $author\n"
 
 ##################################
 # read input from command line
-# Use > 0 to consume one or more arguments per pass in the loop (e.g.
-# some arguments don't have a corresponding value to go with it such
-# as in the --default example).
+# Use > 0 to consume one or more arguments per pass in the loop (e.g. some arguments don't have a corresponding value to go with it such as in the --default example).
 slack_token="x"
 dm_file="x"
 dm_do=false
@@ -83,71 +82,71 @@ all=false
 debug_off=true
 
 while [[ $# > 0 ]]
-do
-key="$1"
+ do
+	key="$1"
+	case $key in
+		-t|--slack-token-file)
+			slack_token="`cat $2`"
+			shift # past argument
+		;;
+		-T|--slack-token)
+			slack_token="$2"
+			shift # past argument
+		;;
 
-case $key in
-    -t|--slack-token-file)
-    slack_token="`cat $2`"
-    shift # past argument
-    ;;
-    -T|--slack-token)
-    slack_token="$2"
-    shift # past argument
-    ;;
+		-m|--direct-messages)
+			dm_file="$2"
+			dm_do=true
+			shift # past argument
+		;;
 
-    -m|--direct-messages)
-    dm_file="$2"
-    dm_do=true
-    shift # past argument
-    ;;
+		-c|--public-channels)
+			public_file="$2"
+			public_do=true
+			shift # past argument
+		;;
 
-    -c|--public-channels)
-    public_file="$2"
-    public_do=true
-    shift # past argument
-    ;;
+		-g|--private-groups)
+			private_file="$2"
+			private_do=true
+			shift # past argument
+		;;
 
-    -g|--private-groups)
-    private_file="$2"
-    private_do=true
-    shift # past argument
-    ;;
+		-a|--all) # parse all userIDs
+			all=true
+			fetch=true
+			cont=true
+		;;
 
-    -a|--all) # parse all userIDs
-    all=true
-    fetch=true
-    ;;
+		-f|--fetch)
+			fetch=true
+		;;
 
-    -f|--fetch)
-    fetch=true
-    ;;
+		-F|--fetch-only)
+			fetch=true
+			fetch_only=true
+		;;
 
-    -F|--fetch-only)
-    fetch=true
-    fetch_only=true
-    ;;
+		-h|--help)
+			help=true
+		;;
 
-    -h|--help)
-    help=true
-    ;;
+		-w|--bypass-warnings)
+			cont=true
+		;;
 
-    -w|--bypass-warnings)
-    cont=true
-    ;;
-    
-    -s|--bypass-setup)
-    setup=false
-    ;;
+		-s|--bypass-setup)
+			setup=false
+		;;
 
-    -d|--debug-on)
-    debug_off=false;
-    ;;
+		-d|--debug-on)
+			debug_off=false;
+		;;
 
-    *) # unknown option
-    ;;
-esac
-shift # past argument or value
+		*) # unknown option
+		;;
+	esac
+	shift # past argument or value
 done
 ##################################
 
@@ -158,7 +157,13 @@ if ( $help )
  then
 	printf "$usage"
 	exit 200
+else #prep the folders
+	directory="slack-backup_`date +%Y-%m-%d-%H.%M.%S`"
+	debug="$directory/_debug"
+	logs="$debug/logs"
+	mkdir $directory $debug $logs
 fi
+
 
 if [[ $slack_token == "x" ]]
  then
@@ -166,32 +171,40 @@ if [[ $slack_token == "x" ]]
 	printf "Use --help for more information."
 	exit 404
 fi
-##################################
 
+#check Slack token for auth
+printf "Checking Slack Token for valid auth..."
+	wget https://slack.com/api/auth.test?token=$slack_token -O $debug/auth.test  1>$logs/wget_auth.log 2>&1
+	auth=`cat $debug/auth.test | grep -m 1 "\"ok\": true,"`
+	if ! ( $auth )
+	 then
+		printf "API Token not authorized. Quitting."
+		exit 401
+	fi
+printf "done.\n"
 
-##################################
 # check for input warnings and notify
 warn=false
 if [[ $private_file == "x" ]]
  then
-	printf "WARNING: proceeding without the list of Private Groups."
+	printf "\tWARNING: proceeding without the list of Private Groups.\n"
 	warn=true
 fi
 
 if [[ $public_file == "x" ]]
  then
-	printf "WARNING: proceeding without the list of Public Channels."
+	printf "\tWARNING: proceeding without the list of Public Channels.\n"
 	warn=true
 fi
 
 if [[ $dm_file == "x" ]]
  then
-	printf "WARNING: proceeding without the list of Direct Message personnel."
+	printf "\tWARNING: proceeding without the list of Direct Message personnel.\n"
 	warn=true
 fi
 
-if ( $warn && $cont ) #check for suppression
- then #ask if the user wnts to contninue with warnings
+if ( $warn && ! $cont ) #check for suppression
+ then #ask if the user wants to contninue with warnings
 	printf "Warnings were generated, continue? (Y/n) "
 	read cont
 	if ! [[ $cont == "y" || $cont == "Y" ]]
@@ -199,39 +212,33 @@ if ( $warn && $cont ) #check for suppression
 		exit 301
 	fi
 fi
+
+#check that files are set
+if ( $fetch || $fetch_only || $all ) #unneccessary checks, but still, good writing form
+ then
+	dm_file="dm.list"
+	private_file="groups.list"
+	public_file="channels.list"
+fi
 ##################################
 
 
 ##################################
 # software prep
-if ( $setup )
- then
-	printf "\nPerforming software updates/installs to make sure you have everything we need, then we'll get started.\n"
-		apt-get -y install php5-common php5-cli wget
-		wget -qO- https://deb.nodesource.com/setup | bash -
-		apt-get -y install nodejs
-		npm install npm -g
-		npm install slack-history-export -g
-fi
-
-printf "\nSetting up working environment...\n"
-	directory="slack-backup_`date +%Y-%m-%d-%H.%M.%S`"
-	debug="$directory/_debug"
-	mkdir $directory $debug
-	#slack_token=$1
-printf "done.\n"
-##################################
-
-
-##################################
-#check Slack token for auth
-printf "Checking Slack Token for valid auth...\n"
-	auth=wget https://slack.com/api/auth.test?token=$slack_token | grep -m 1 "\"ok\": true,"
-	if ! ( $auth )
+printf "Setting up working environment..."
+	if ( $setup )
 	 then
-		printf "API Token not authorized. Quitting."
-		exit 401
+		printf "Performing software updates/installs to make sure you have everything we need, then we'll get started.\n"
+			apt-get -y install php5-common php5-cli wget  1>$logs/setup1.log 2>&1
+			wget -qO- https://deb.nodesource.com/setup | bash - 1>$logs/setup2.log 2>&1
+			apt-get -y install nodejs 1>$logs/setup3.log 2>&1
+			npm install npm -g 1>$logs/setup4.log 2>&1
+			npm install slack-history-export -g 1>$logs/setup5.log 2>&1
+		printf "\n"
 	fi
+	
+	wget "https://gist.githubusercontent.com/dharmastyle/5d1e8239c5684938db0b/raw/cf1afe32967c6b497ed1ed97ca4a8ab5ee3df953/slack-json-2-html.php" -O $directory/slack-json-2-html.php 1>$logs/wget_tools1.log 2>&1
+	chmod 777 $directory/slack-json-2-html.php
 printf "done.\n"
 ##################################
 
@@ -245,57 +252,39 @@ printf "done.\n"
 	## and the last line that shows:
 	#}
 # from all files created as a result of the wget api calls.
-printf "\nGetting Channel meta data...\n"
-	wget https://slack.com/api/channels.list?token=$slack_token -O "channels.list.json"
+printf "Getting Channel meta data..."
+	wget https://slack.com/api/channels.list?token=$slack_token -O "channels.list.json" 1>$logs/wget_meta01.log 2>&1
+	cat channels.list.json | sed 's/{\"ok\":true,\"channels\"://1' | sed '$ s/.$//' > channels.json
+	mv channels.list.json $debug
+	mv channels.json $directory
 printf "done.\n"
 
-printf "\nCleaning Channel meta data...\n"
-	sed 's/{\"ok\":true,\"channels\"://1w tmp.json' channels.list.json
-	sed '$ s/.$//w channels.json' tmp.json
-	rm -v tmp.json 
-	mv -v channels.list.json $debug
-	mv -v channels.json $directory
+printf "Getting Users meta data..."
+	wget https://slack.com/api/users.list?token=$slack_token -O "users.list.json" 1>$logs/wget_meta02.log 2>&1
+	cat users.list.json | sed 's/{\"ok\":true,\"members\"://1' | sed '$ s/.$//' > users.json
+	mv users.list.json $debug
+	mv users.json $directory
 printf "done.\n"
 
-printf "\nGetting Users meta data...\n"
-	wget https://slack.com/api/users.list?token=$slack_token -O "users.list.json"	
-printf "done.\n"
-
-printf "\nCleaning Users meta data...\n"
-	sed 's/{\"ok\":true,\"members\"://1w tmp.json' users.list.json
-	sed '$ s/.$//w users.json' tmp.json
-	rm -v tmp.json 
-	mv -v users.list.json $debug
-	mv -v users.json $directory
-printf "done.\n"
-
-printf "\nGetting IntegrationLogs data...\n"
-	wget https://slack.com/api/team.integrationLogs.list?token=$slack_token -O "team.integrationLogs.json"
-printf "done.\n"
-	
-printf "\nCleaning IntegrationLogs data...\n"
-	sed 's/{\"ok\":true,\"members\"://1w tmp.json' team.IntegrationLogs.json
-	printf "[\n\n]" >> integration_logs.json
+printf "Getting IntegrationLogs data..."
+	wget https://slack.com/api/team.integrationLogs.list?token=$slack_token -O "team.integrationLogs.json" 1>$logs/wget_meta03.log 2>&1
+	#if you are an admin then use this
+		#cat team.integrationLogs.json | sed 's/{\"ok\":true,\"members\"://1' |sed '$ s/.$//' > integration_logs.json
+	#else use this default to create the blank file
 		#most users won't have slack-admin rights for this, check for an error and if it occured then just write a blank file "[\n]"
-	#if you have slack-admin rights then use the sed line below
-	#sed '$ s/.$//w integration_logs.json' tmp.json
-	rm -v tmp.json
-	mv -v team.integrationLogs.json $debug
-	mv -v integration_logs.json $directory
+		printf "[\n\n]" >> integration_logs.json
+	mv team.integrationLogs.json $debug
+	mv integration_logs.json $directory
 printf "done.\n"
 
-printf "\nGetting optional meta data...\n"
-	wget https://slack.com/api/team.info?token=$slack_token -O "$debug/team.info.json"
-	wget https://slack.com/api/reminders.list?token=$slack_token -O "$debug/reminders.list.json"
-	wget https://slack.com/api/emoji.list?token=$slack_token -O "$debug/emoji.list.json"
-printf "done.\n"
-
-printf "\nGetting list of all chat threads...\n"
-	wget https://slack.com/api/im.list?token=$slack_token -O "$debug/im.list.json"
-	wget https://slack.com/api/groups.list?token=$slack_token -O "$debug/groups.list.json"
-	wget https://slack.com/api/channels.list?token=$slack_token -O "$debug/channels.list.json"
-	#wget https://slack.com/api/mpim.list?token=$slack_token -O "$debug/mpim.list.json"
-		#slack-history-export can't handle these yet
+printf "Getting additional meta data..."
+	wget  https://slack.com/api/team.info?token=$slack_token -O "$debug/team.info.json" 1>$logs/wget_meta04.log 2>&1
+	wget  https://slack.com/api/reminders.list?token=$slack_token -O "$debug/reminders.list.json" 1>$logs/wget_meta05.log 2>&1
+	wget  https://slack.com/api/emoji.list?token=$slack_token -O "$debug/emoji.list.json" 1>$logs/wget_meta06.log 2>&1
+	wget  https://slack.com/api/im.list?token=$slack_token -O "$debug/im.list.json" 1>$logs/wget_meta07.log 2>&1
+	wget  https://slack.com/api/groups.list?token=$slack_token -O "$debug/groups.list.json" 1>$logs/wget_meta08.log 2>&1
+	wget  https://slack.com/api/channels.list?token=$slack_token -O "$debug/channels.list.json" 1>$logs/wget_meta09.log 2>&1
+	wget  https://slack.com/api/mpim.list?token=$slack_token -O "$debug/mpim.list.json" 1>$logs/wget_meta10.log 2>&1 #slack-history-export can't handle these yet
 printf "done.\n"
 ##################################
 
@@ -303,15 +292,12 @@ printf "done.\n"
 ##################################
 # get message data and parse it through the first pass of cleansing
 
-if ( $fetch || $all )
+if ( $fetch )
  then
-	printf "\nParsing chat thread lists...\n"
-		cat $debug/users.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > dm.list
-		dm_file="dm.list"
-		cat $debug/groups.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > groups.list
-		private_file="groups.list"
-		cat $debug/channels.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > channels.list
-		public_file="channels.list"
+	printf "Parsing chat thread lists for names..."	
+		cat $debug/users.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > $dm_file 1>$logs/parse_users.log 2>&1
+		cat $debug/groups.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > $private_file 1>$logs/parse_groups.log 2>&1
+		cat $debug/channels.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > $public_file 1>$logs/parse_channels.log 2>&1
 	printf "done.\n"
 
 	if ( $fetch_only )
@@ -322,64 +308,80 @@ fi
 
 if ( $dm_do || $all)
  then
-	printf "\nGetting Direct Messages...\n"
+	printf "Getting Direct Messages..."
+		rDIR=0
+		rADIR=0
 		mapfile -t dm_list < $dm_file
 		for dm in "${dm_list[@]}"
 		do
-			printf "\nDM with: $dm\n"
+			rADIR=$(($rADIR + 1))			
+			printf "$dm, "
 			dir="$directory/$dm"
 			mkdir $dir
-			slack-history-export --token $slack_token --username $dm --directory $dir #--filename $dm
+			slack-history-export --token $slack_token --username $dm --directory $dir 1>$logs/she_dm.log 2>&1
 			if [[ `ls -1 $dir | wc -l` -eq 0 ]]
 			 then
 				rm -r $dir
+			else
+				rDIR=$(($rDIR + 1))
 			fi
 		done
-	printf "done.\n"
+	printf "done!\n"
 fi
 
 if ( $private_do || $all)
  then
-	printf "\nGetting Private channels...\n"
+	printf "Getting Private Groups..."
+		rPRIV=0
+		rAPRIV=0
 		mapfile -t private_list < $private_file
-		for dm in "${private_list[@]}"
+		for pg in "${private_list[@]}"
 		do
-			printf "\nPrivate Channel: $dm\n"
-			dir="$directory/$dm"
+			rAPRIV=$(($rAPRIV + 1))			
+			printf "$pg, "
+			dir="$directory/$pg"
 			mkdir $dir
-			slack-history-export --token $slack_token --group $dm --directory $dir #--filename "$dm"
+			slack-history-export --token $slack_token --group $pg --directory $dir 1>$logs/she_pg.log 2>&1
+			if [[ `ls -1 $dir | wc -l` -eq 0 ]]
+			 then
+				rm -r $dir
+			else
+				rPRIV=$(($rPRIV + 1))
+			fi
 		done
-	printf "done.\n"
+	printf "done!\n"
 fi
 
 if ( $public_do || $all)
  then
-	printf "\nGetting Public channels...\n"
+	printf "Getting Public Channels..."
+		rPUB=0
+		rAPPUB=0		
 		mapfile -t public_list < $public_file
-		for dm in "${public_list[@]}"
+		for pc in "${public_list[@]}"
 		do
-			printf "\nPublic Channel: $dm\n"
-			dir="$directory/$dm"
+			rAPUB=$(($rAPUB + 1))				
+			printf "$pc, "
+			dir="$directory/$pc"
 			mkdir $dir
-			slack-history-export --token $slack_token --channel $dm --directory $dir #--filename "$dm"
+			slack-history-export --token $slack_token --channel $pc --directory $dir 1>$logs/she_pc.log 2>&1
+			if [[ `ls -1 $dir | wc -l` -eq 0 ]]
+			 then
+				rm -r $dir
+			else
+				rPUB=$(($rPUB + 1))
+			fi
 		done
-	printf "done.\n"
+	printf "done!\n"
 fi
 
-printf "\nFinished downloading history.\n"
-##################################
+printf "Finished downloading history.\n"
 
-
-##################################
 # clean up the data
-printf "\nGetting prettifying resources...\n"
-	cd $directory
-	wget "https://gist.githubusercontent.com/dharmastyle/5d1e8239c5684938db0b/raw/cf1afe32967c6b497ed1ed97ca4a8ab5ee3df953/slack-json-2-html.php"
-	chmod 777 slack-json-2-html.php
-printf "done.\n"
-
-printf "\nMaking things pretty...\n"
-	php slack-json-2-html.php
+printf "Making things pretty..."
+	cd $directory	
+	php slack-json-2-html.php # 1>$logs/sj2h.log 2>&1
+	cd ..
 printf "done.\n"
 ##################################
 
@@ -387,19 +389,33 @@ printf "done.\n"
 ##################################
 # clean up the environment
 printf "\nCleaning up..."
-	rm "slack-json-2-html.php"
-	mv -v *.json $debug
-	cd ..
-	mv -v slack2html/ $directory/
-	cd $directory
-	mv *.* $debug # TEST THIS
-	mv $debug/slack2html _slacklog_ui # TEST THIS
-	if ( $debug_off ))
+	mv $directory/slack-json-2-html.php $debug/ 1>$logs/cleanup01.log 2>&1
+	cp $dm_file $private_file $public_file $debug/ 1>$logs/cleanup02.log 2>&1
+	mv $directory/* $debug 1>$logs/cleanup03.log 2>&1
+	mv $directory/../slack2html/ $directory/ 1>$logs/cleanup04.log 2>&1
+
+	if ( $debug_off )
 	 then
-		rm -r $debug
+		rm -r $debug 1>$logs/cleanup08.log 2>&1
 	fi
 printf "done.\n"
+printf "\nCompleted Task.\n"
+END=$(date +%s)
 ##################################
 
-printf "\nCompleted Task.\n"
+
+##################################
+# print a report
+SEC=$(( $END - $START ))
+HOUR=$(( $SEC / 3600 ))
+MIN=$(( ( $SEC % 3600 ) / 60 ))
+SEC=$(( $SEC % 60 ))
+printf "Execution Report:\n
+Channels Counts\t\t   Checked  Downloaded
+	 Private Groups:\t$rAPRIV\t$rPRIV
+	Public Channels:\t$rAPUB\t$rPUB
+	Direct Messages:\t$rADIR\t$rDIR
+Time to Complete: $HOUR:$MIN:$SEC\n"
+##################################
+
 exit 200
