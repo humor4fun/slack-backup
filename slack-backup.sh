@@ -7,9 +7,9 @@
 
 ##################################
 # environment variables
-version="1.32"
+version="1.33"
 author="Chris Holt, @humor4fun"
-date="2016-05-02"
+date="2016-05-03"
 usage="Slack Backup by $author 
 	Version: $version 
 	Last updated date: $date 
@@ -308,10 +308,10 @@ if ( $fetch || $all )
 	printf "\nParsing chat thread lists...\n"
 		cat $debug/users.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > dm.list
 		dm_file="dm.list"
-		cat $debug/groups.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > dm.list
-		dm_file="groups.list"
-		cat $debug/channels.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > dm.list
-		dm_file="dm.list"
+		cat $debug/groups.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > groups.list
+		private_file="groups.list"
+		cat $debug/channels.list.json | tr , '\n' | grep -Po '"name":".*"' | sed 's/.*\":\"//g' | sed 's/"//g' > channels.list
+		public_file="channels.list"
 	printf "done.\n"
 
 	if ( $fetch_only )
@@ -392,7 +392,8 @@ printf "\nCleaning up..."
 	cd ..
 	mv -v slack2html/ $directory/
 	cd $directory
-	mv slack2html _slacklog_ui
+	mv *.* $debug # TEST THIS
+	mv $debug/slack2html _slacklog_ui # TEST THIS
 	if ( $debug_off ))
 	 then
 		rm -r $debug
