@@ -12,8 +12,13 @@ Credit to: https://github.com/hisabimbola/slack-history-export https://gist.gith
 
 Sample Executions:
 ./slack-backup.sh --debug-on --all --slack-token-file token
+
 ./slack-backup.sh -d -a -t token
+
 ./slack-backup.sh --debug-on --bypass-setup --all --slack-token-file token
+
 ./slack-backup.sh -d -s -a -t token
+
 ./slack-backup.sh --debug-on --bypass-setup --slack-token-file token --direct-messages dm.list --public-channels pc.list --private-groups pg.list
+
 ./slack-backup.sh -s -t token -m dm.list -c pc.list -g pg.list
