@@ -8,7 +8,7 @@
 ##################################
 # environment variables
 START=$(date +%s)
-version="1.95b"
+version="1.95c"
 author="Chris Holt, @humor4fun"
 date="2016-05-05"
 usage="Slack Backup by $author 
@@ -25,7 +25,7 @@ Options:
 		Implies --fetch --bypass-warnings. Use the web APIs to force a download of ALL Public Channels, Private Groups (the user has access to) and Direct Message conversations.
 		Note: This WILL take quite a wile! Use with caution.
 
-	-A|--all-users	
+	-A | --all-users	
 		Fetch all users to put into the Direct Messages list.
 		Note: This WILL take quite a wile! Use with caution if downloading conversations for this list.
 	
