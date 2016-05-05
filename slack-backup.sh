@@ -8,7 +8,7 @@
 ##################################
 # environment variables
 START=$(date +%s)
-version="1.93"
+version="1.94"
 author="Chris Holt, @humor4fun"
 date="2016-05-05"
 usage="Slack Backup by $author 
@@ -473,12 +473,15 @@ SEC=$(( $END - $START ))
 HOUR=$(( $SEC / 3600 ))
 MIN=$(( ( $SEC % 3600 ) / 60 ))
 SEC=$(( $SEC % 60 ))
-printf "Execution Report:\n
+REPORT="Execution Report:\n
 Channels Counts\t\t   Checked  Downloaded
 	 Private Groups:\t$rAPRIV\t$rPRIV
 	Public Channels:\t$rAPUB\t$rPUB
 	Direct Messages:\t$rADIR\t$rDIR
 Time to Complete: $HOUR:$MIN:$SEC\n"
+
+printf $REPORT
+printf $REPORT > $directory/benchmark.log
 ##################################
 
 exit 200
