@@ -7,18 +7,19 @@ Cron-able script to use Slack APIs to archive all messages.
 1. Save slack-backup.sh to a file
 2. `chmod 777 slack-backup.sh`
 3. Get a Slack API token from your account-> [Can be generated here] (https://api.slack.com/web)
-4. `./slack-backup.sh --setup`
+4. Put that token into a file and save it
+5. Execute the setup to make sure you have all the required libraries `./slack-backup.sh --setup`
 
 ## Usage
+Run a backup routine of just the Direct Messages conversations that you have had with all users in your organization.
 `./slack-backup.sh -t token [options]`
-```
-./slack-backup.sh --debug-on --all --slack-token-file token
-./slack-backup.sh -d -a -t token
-```
-```
-./slack-backup.sh --slack-token-file token --direct-messages dm.list --public-channels pc.list --private-groups pg.list
-./slack-backup.sh -t token -m dm.list -c pc.list -g pg.list
-```
+
+Run a backup routine of all Public Channels, Private Groups and Direct Messages within your organization.
+`./slack-backup.sh --debug-on --all --slack-token-file token`
+
+Run a backup routine of the Public Channels specified in pc.list, Private Groups specified in pg.list, and Direct Messages for users specified in dm.list.
+`./slack-backup.sh --slack-token-file token --direct-messages dm.list --public-channels pc.list --private-groups pg.list`
+
 ## Options
 ```
 -a | --all
@@ -50,6 +51,32 @@ Cron-able script to use Slack APIs to archive all messages.
   NOTE: Token can be generated here: https://api.slack.com/web 
 -w | --bypass-warnings 
 	Automatically continue even if warnings occur during setup. \n"
+```
+
+## Sample Input Files
+token:
+```
+xoxp-0123456789-0123456789-01234567890-ABCDEF
+```
+dm.list:
+```
+john.doe
+jane.doe
+mr.potatohead
+buzz.lightyear
+awesomejoe.brown
+slackbot
+```
+pc.list:
+```
+everyone
+system-outtages
+github-dev
+```
+pg.list:
+```
+team1
+team2
 ```
 
 ## Thanks to: 
