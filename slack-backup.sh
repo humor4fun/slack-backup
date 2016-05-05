@@ -8,9 +8,9 @@
 ##################################
 # environment variables
 START=$(date +%s)
-version="1.80"
+version="1.81"
 author="Chris Holt, @humor4fun"
-date="2016-05-03"
+date="2016-05-05"
 usage="Slack Backup by $author 
 	Version: $version 
 	Last updated date: $date 
@@ -239,6 +239,13 @@ printf "Setting up working environment..."
 	
 	wget "https://gist.githubusercontent.com/dharmastyle/5d1e8239c5684938db0b/raw/cf1afe32967c6b497ed1ed97ca4a8ab5ee3df953/slack-json-2-html.php" -O $directory/slack-json-2-html.php 1>$logs/wget_tools1.log 2>&1
 	chmod 777 $directory/slack-json-2-html.php
+
+	mkdir $logs/she_pg $logs/she_dm $logs/she_pc
+
+	#touch the log files to make sure they exist
+	touch $dm_file.act 	$dm_file.drop
+	touch $private_file.act $private_file.drop
+	touch $public_file.act 	$public_file.drop
 printf "done.\n"
 ##################################
 
@@ -318,12 +325,15 @@ if ( $dm_do || $all )
 			printf "$dm, "
 			dir="$directory/$dm"
 			mkdir $dir
-			slack-history-export --token $slack_token --username $dm --directory $dir 1>$logs/she_dm.log 2>&1
+			slack-history-export --token $slack_token --username $dm --directory $dir 1>$logs/she_dm/$dm.log 2>&1
+
 			if [[ `ls -1 $dir | wc -l` -eq 0 ]]
 			 then
 				rm -r $dir
-			else
+				sed -i '$ a $dm' $dm_file.drop
+			 else
 				rDIR=$(($rDIR + 1))
+				sed -i '$ a $dm' $dm_file.act
 			fi
 		done
 	printf "done!\n"
@@ -341,12 +351,14 @@ if ( $private_do || $all )
 			printf "$pg, "
 			dir="$directory/$pg"
 			mkdir $dir
-			slack-history-export --token $slack_token --group $pg --directory $dir 1>$logs/she_pg.log 2>&1
+			slack-history-export --token $slack_token --group $pg --directory $dir 1>$logs/she_pg/$pg.log 2>&1
 			if [[ `ls -1 $dir | wc -l` -eq 0 ]]
 			 then
 				rm -r $dir
+				sed -i '$ a $dm' $private_file.drop
 			else
 				rPRIV=$(($rPRIV + 1))
+				sed -i '$ a $dm' $private_file.act
 			fi
 		done
 	printf "done!\n"
@@ -364,12 +376,14 @@ if ( $public_do || $all )
 			printf "$pc, "
 			dir="$directory/$pc"
 			mkdir $dir
-			slack-history-export --token $slack_token --channel $pc --directory $dir 1>$logs/she_pc.log 2>&1
+			slack-history-export --token $slack_token --channel $pc --directory $dir 1>$logs/she_pc/$pc.log 2>&1
 			if [[ `ls -1 $dir | wc -l` -eq 0 ]]
 			 then
 				rm -r $dir
+				sed -i '$ a $dm' $public_file.drop
 			else
 				rPUB=$(($rPUB + 1))
+				sed -i '$ a $dm' $public_file.act
 			fi
 		done
 	printf "done!\n"
@@ -398,6 +412,9 @@ printf "\nCleaning up..."
 	 then
 		rm -r $debug 1>$logs/cleanup05.log 2>&1
 	fi
+
+	mv $dm_file.act $dm_file.drop $private_file.act $private_file.drop $public_file.act $public_file.drop $directory/
+
 printf "done.\n"
 printf "\nCompleted Task.\n"
 END=$(date +%s)
