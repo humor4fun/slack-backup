@@ -8,7 +8,7 @@
 ##################################
 # environment variables
 START=$(date +%s)
-version="1.94"
+version="1.95"
 author="Chris Holt, @humor4fun"
 date="2016-05-05"
 usage="Slack Backup by $author 
@@ -480,8 +480,8 @@ Channels Counts\t\t   Checked  Downloaded
 	Direct Messages:\t$rADIR\t$rDIR
 Time to Complete: $HOUR:$MIN:$SEC\n"
 
-printf $REPORT
-printf $REPORT > $directory/benchmark.log
+printf "$REPORT"
+printf "$REPORT" > $directory/benchmark.log
 ##################################
 
 exit 200
