@@ -8,7 +8,7 @@
 ##################################
 # environment variables
 START=$(date +%s)
-version="1.95"
+version="1.95b"
 author="Chris Holt, @humor4fun"
 date="2016-05-05"
 usage="Slack Backup by $author 
@@ -217,6 +217,7 @@ if [[ $private_file == "x" ]]
 	printf "\tWARNING: proceeding without the list of Private Groups. If required, this list will be fetched.\n"
 	warn=true
 	fetch_private=true
+	fetch=true
 	private_file="private.list"
 fi
 
@@ -225,6 +226,7 @@ if [[ $public_file == "x" ]]
 	printf "\tWARNING: proceeding without the list of Public Channels. If required, this list will be fetched.\n"
 	warn=true
 	fetch_public=true
+	fetch=true
 	public_file="public.list"
 fi
 
@@ -234,6 +236,7 @@ if [[ $dm_file == "x" ]]
 	warn=true
 	fetch_users=true
 	dm_file="dm.list"
+	fetch=true
 	if ( $fetch_all_users )
 	 then
 		fetch_users=false
@@ -244,7 +247,6 @@ if ( $warn && ! $cont ) #check for suppression
  then #ask if the user wants to contninue with warnings
 	printf "Warnings were generated, continue? (Y/n) "
 	read cont
-	fetch=true
 	if ! [[ $cont == "y" || $cont == "Y" ]]
 	 then
 		exit 301
