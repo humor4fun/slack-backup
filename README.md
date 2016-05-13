@@ -11,10 +11,8 @@ Cron-able script to use Slack APIs to archive all messages.
 5. Execute the setup to make sure you have all the required libraries `./slack-backup.sh --setup`
 
 ## Usage
-General  `./slack-backup.sh -t token [options]`
-
 Run a backup routine of just the Direct Messages conversations that you have had with all users in your organization.
-`./slack-backup.sh -t token`
+`./slack-backup.sh -t token [options]`
 
 Run a backup routine of all Public Channels, Private Groups and Direct Messages within your organization.
 `./slack-backup.sh --debug-on --all --slack-token-file token`
