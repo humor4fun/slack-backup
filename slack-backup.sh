@@ -184,10 +184,12 @@ if ( $setup )
  then
 	printf "Performing software updates/installs to make sure you have everything we need, then we'll get started.\n"
 		apt-get -y install php5-common php5-cli wget  1>$logs/setup1.log 2>&1
-		wget -qO- https://deb.nodesource.com/setup | bash - 1>$logs/setup2.log 2>&1
+		wget -qO- https://deb.nodesource.com/setup_4.x | bash - 1>$logs/setup2.log 2>&1
 		apt-get -y install nodejs 1>$logs/setup3.log 2>&1
-		npm install npm -g 1>$logs/setup4.log 2>&1
-		npm install slack-history-export -g 1>$logs/setup5.log 2>&1
+		wget -qO- https://deb.nodesource.com/setup_6.x | bash - 1>$logs/setup4.log 2>&1
+		apt-get -y install nodejs 1>$logs/setup5.log 2>&1
+		npm install npm -g 1>$logs/setup6.log 2>&1
+		npm install slack-history-export -g 1>$logs/setup7.log 2>&1
 	printf "\n"
 	exit 200
 fi
