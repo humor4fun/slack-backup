@@ -8,7 +8,7 @@
 ##################################
 # environment variables
 START=$(date +%s)
-version="1.95c"
+version="1.96"
 author="Chris Holt, @humor4fun"
 date="2016-05-05"
 usage="Slack Backup by $author 
