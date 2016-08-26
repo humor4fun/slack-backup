@@ -4,13 +4,14 @@
 
 # Purpose:
 #  Download slack history then convert it into browsable HTML files
+#  https://github.com/humor4fun/slack-backup
 
 ##################################
 # environment variables
 START=$(date +%s)
-version="1.96"
+version="1.97"
 author="Chris Holt, @humor4fun"
-date="2016-05-05"
+date="2016-08-26"
 usage="Slack Backup by $author 
 	Version: $version 
 	Last updated date: $date 
@@ -18,7 +19,7 @@ usage="Slack Backup by $author
 Usage: 
 	slack-backup.sh -t token [options]
 	
-	TOKEN is the only required variable, if no Group, Channel or User options are specified, only USERS will be queried and this list will be force-fetched. Use `slack-backup.sh --setup` first before attempting to use the main body of this script.
+	TOKEN is the only required variable, if no Group, Channel or User options are specified, only USERS will be queried and this list will be force-fetched. Use \"slack-backup.sh --setup\" first before attempting to use the main body of this script.
 
 Options:
 	-a | --all
@@ -64,7 +65,7 @@ Options:
 		Automatically continue even if warnings occur during setup. \n"
 
 
-printf "Slack-Backup $version by $author\n"
+printf "Slack-Backup v%s by %s\n" "$version" "$author"
 ##################################
 
 
@@ -169,7 +170,7 @@ done
 # check for input errors and fail
 if ( $help )
  then
-	printf "$usage"
+	printf "%s" "$usage"
 	exit 200
 else #prep the folders
 	directory="slack-backup_`date +%Y-%m-%d-%H.%M.%S`"
@@ -196,7 +197,7 @@ fi
 
 if [[ $slack_token == "x" ]]
  then
-	printf "ERROR: cannot proceed with ($slack_token) as the Slack API token. Please supply your Slack API token as a parameter."
+	printf "ERROR: cannot proceed with (%s) as the Slack API token. Please supply your Slack API token as a parameter." "$slack_token"
 	printf "Use --help for more information."
 	exit 404
 fi
@@ -368,10 +369,11 @@ if ( $dm_do || $all )
 		for dm in "${dm_list[@]}"
 		do
 			rADIR=$(($rADIR + 1))			
-			printf "$dm, "
+			printf "%s, " "$dm"
 			dir="$directory/$dm"
 			mkdir $dir
 			slack-history-export --token $slack_token --username $dm --directory $dir 1>$logs/she_dm/$dm.log 2>&1
+	#printf "\nslack-history-export --token %s --username %s --directory %s 1>%s/she_dm/%s.log 2>&1\n" $slack_token $dm $dir $logs $dm
 
 			if [[ `ls -1 $dir | wc -l` -eq 0 ]]
 			 then
@@ -396,7 +398,7 @@ if ( $private_do || $all )
 		for pg in "${private_list[@]}"
 		do
 			rAPRIV=$(($rAPRIV + 1))			
-			printf "$pg, "
+			printf "%s, " "$pg"
 			dir="$directory/$pg"
 			mkdir $dir
 			slack-history-export --token $slack_token --group $pg --directory $dir 1>$logs/she_pg/$pg.log 2>&1
@@ -423,7 +425,7 @@ if ( $public_do || $all )
 		for pc in "${public_list[@]}"
 		do
 			rAPUB=$(($rAPUB + 1))				
-			printf "$pc, "
+			printf "%s, " "$pc"
 			dir="$directory/$pc"
 			mkdir $dir
 			slack-history-export --token $slack_token --channel $pc --directory $dir 1>$logs/she_pc/$pc.log 2>&1
@@ -478,14 +480,15 @@ HOUR=$(( $SEC / 3600 ))
 MIN=$(( ( $SEC % 3600 ) / 60 ))
 SEC=$(( $SEC % 60 ))
 REPORT="Execution Report:\n
-Channels Counts\t\t   Checked  Downloaded
-	 Private Groups:\t$rAPRIV\t$rPRIV
-	Public Channels:\t$rAPUB\t$rPUB
-	Direct Messages:\t$rADIR\t$rDIR
+Channels Counts\t\t\tChecked  Downloaded
+\tPrivate Groups:\t\t$rAPRIV\t$rPRIV
+\tPublic Channels:\t$rAPUB\t$rPUB
+\tDirect Messages:\t$rADIR\t$rDIR
 Time to Complete: $HOUR:$MIN:$SEC\n"
 
-printf "$REPORT"
-printf "$REPORT" > $directory/benchmark.log
+printf "%s" "$REPORT"
+printf "%s" "$REPORT" > $directory/benchmark.log
 ##################################
 
 exit 200
+
