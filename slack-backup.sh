@@ -9,9 +9,9 @@
 ##################################
 # environment variables
 START=$(date +%s)
-version="1.97"
+version="1.97b"
 author="Chris Holt, @humor4fun"
-date="2016-08-26"
+date="2017-01-24"
 usage="Slack Backup by $author 
 	Version: $version 
 	Last updated date: $date 
@@ -405,10 +405,10 @@ if ( $private_do || $all )
 			if [[ `ls -1 $dir | wc -l` -eq 0 ]]
 			 then
 				rm -r $dir
-				sed -i '$ a $dm' $private_file.drop
+				sed -i '$ a $pg' $private_file.drop
 			else
 				rPRIV=$(($rPRIV + 1))
-				sed -i '$ a $dm' $private_file.act
+				sed -i '$ a $pg' $private_file.act
 			fi
 		done
 		mv $private_file.act $private_file.drop $directory
@@ -432,10 +432,10 @@ if ( $public_do || $all )
 			if [[ `ls -1 $dir | wc -l` -eq 0 ]]
 			 then
 				rm -r $dir
-				sed -i '$ a $dm' $public_file.drop
+				sed -i '$ a $pc' $public_file.drop
 			else
 				rPUB=$(($rPUB + 1))
-				sed -i '$ a $dm' $public_file.act
+				sed -i '$ a $pc' $public_file.act
 			fi
 		done
 		mv $public_file.act $public_file.drop $directory
@@ -491,4 +491,3 @@ printf "%s" "$REPORT" > $directory/benchmark.log
 ##################################
 
 exit 200
-
