@@ -11,7 +11,9 @@ Cron-able script to use Slack APIs to archive all messages.
 5. Execute the setup to make sure you have all the required libraries `./slack-backup.sh --setup`
 
 ## Usage
-General  `./slack-backup.sh -t token [options]`
+Quick `./slack-backup --nike token`
+
+General:  `./slack-backup.sh -t token [options]`
 
 Run a backup routine of just the Direct Messages conversations that you have had with all users in your organization.
 `./slack-backup.sh -t token`
@@ -24,35 +26,56 @@ Run a backup routine of the Public Channels specified in pc.list, Private Groups
 
 ## Options
 ```
--a | --all
-	Implies --fetch --bypass-warnings. Use the web APIs to force a download of ALL Public Channels, Private Groups (the user has access to) and Direct Message conversations.
-	Note: This WILL take quite a wile! Use with caution.
--A | --all-users	
-	Fetch all users to put into the Direct Messages list.
-	Note: This WILL take quite a wile! Use with caution if downloading conversations for this list.
--c | --public-channels FILE 
-	FILE to read list of channel names for pulling Public Channel conversaitons.
--d | --debug-on
-	Keep the Debug folder after the script executes. Defaults to OFF so this folder will be deleted, saving disk space.
--f | --fetch
-	Fetches the user lists for public, private and DM messages. Stores them in local files for later use. 
--F | --fetch-only
-	Like --fetch, but quits the remaining script execution afterwards. This will still perform all of the setup but will not execute the conversation download or cleaning.
--g | --private-groups FILE 
-	FILE to read list of group names for pulling Private Group conversaitons. 
--h | --help 
-	Display this help message. 
--m | --direct-messages FILE 
-	FILE to read list of usernames for pulling Direct Message conversaitons.
--s | --setup 
-	Run the software setup and check steps. This can take 1 - 5 minutes to execute.
--t | --slack-token-file  FILE
-	Text FILE containing the Slack API token. 
--T | --slack-token TOKEN 
-	Slack token embedded into the command parameters.
-  NOTE: Token can be generated here: https://api.slack.com/web 
--w | --bypass-warnings 
-	Automatically continue even if warnings occur during setup. \n"
+slack-backup.sh -t token [options]
+	
+	TOKEN is the only required variable, if no Group, Channel or User options are specified, only USERS will be queried and this list will be force-fetched. Use \"slack-backup.sh --setup\" first before attempting to use the main body of this script.
+
+Options:
+	-a | --all
+		Implies --fetch --bypass-warnings. Use the web APIs to force a download of ALL Public Channels, Private Groups (the user has access to) and Direct Message conversations.
+		Note: This WILL take quite a wile! Use with caution.
+
+	-A | --all-users	
+		Fetch all users to put into the Direct Messages list.
+		Note: This WILL take quite a wile! Use with caution if downloading conversations for this list.
+	
+	-c | --public-channels FILE 
+		FILE to read list of channel names for pulling Public Channel conversaitons. 
+
+	-d | --debug-on
+		Keep the Debug folder after the script executes. Defaults to OFF so this folder will be deleted, saving disk space.
+
+	-f | --fetch
+		Fetches the user lists for public, private and DM messages. Stores them in local files for later use. 
+
+	-F | --fetch-only
+		Like --fetch, but quits the remaining script execution afterwards. This will still perform all of the setup but will not execute the conversation download or cleaning.
+	
+	-g | --private-groups FILE 
+		FILE to read list of group names for pulling Private Group conversaitons. 
+	
+	-h | --help 
+		Display this help message. 
+	
+	-m | --direct-messages FILE 
+		FILE to read list of usernames for pulling Direct Message conversaitons.
+
+	--nike TOKEN
+		\"Just Do It!\"
+		This option will run --setup then execute the entire script again using the --all option with --debug-on and use the supplied token. 
+	
+	-s | --setup 
+		Run the software setup and check steps. This can take 1 - 5 minutes to execute.
+	
+	-t | --slack-token-file  FILE
+		Text FILE containing the Slack API token. 
+	
+	-T | --slack-token TOKEN 
+		Slack token embedded into the command parameters.
+	NOTE: Token can be generated here: https://api.slack.com/web 
+	
+	-w | --bypass-warnings 
+		Automatically continue even if warnings occur during setup.
 ```
 
 ## Sample Input Files
