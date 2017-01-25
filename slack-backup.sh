@@ -6,12 +6,25 @@
 #  Download slack history then convert it into browsable HTML files
 #  https://github.com/humor4fun/slack-backup
 
+# TODO: Replace 'cat infile |' with proper input to the first command. this is poor cat usage.
+# TODO: Clean up the logging of many things; use 'tee' to properly fork output to log files and still show it to the user so they can see when setup fails, or a task is clunking.
+# TODO: Catch errors in requisite tools and save the json files from the slack-api calls in that case for later re-processing. Also, alert the user to the error.
+# TODO: Figure out if possible; then implement: ability to pull Public-Channels IFF TOKEN has contributed to the messages in that channel
+# TODO: Add pretty colors to the --help message
+# TODO: Look into the sed tempfile issue (related to using sed -i); can this usage be replaced by something else?
+# TODO: Don't fetch all those other files if they aren't going to be used (the list files)
+# BUG: Running '/slack-backup.sh --slack-token-file token --private-groups groups.list --debug-on --bypass-warnings' pulled Private-Groups AND some DMs. interesting. why did that happen?
+# BUG: What was the list.act list.drop stuff about? Can I remove that? It doesn't seem to be working.
+# BUG: Catch exception when name already exists; mkdir throws an error "mkdir: cannot create directory '$dir': File exists"
+# TODO: Present user with suggested execution language if the script fails for some reason.
+# TODO: Can we pull down user images for the html?
+
 ##################################
 # environment variables
 START=$(date +%s)
-version="1.97b"
+version="1.98"
 author="Chris Holt, @humor4fun"
-date="2017-01-24"
+date="2017-01-25"
 usage="Slack Backup by $author 
 	Version: $version 
 	Last updated date: $date 
@@ -50,6 +63,10 @@ Options:
 	
 	-m | --direct-messages FILE 
 		FILE to read list of usernames for pulling Direct Message conversaitons.
+
+	--nike TOKEN
+		\"Just Do It!\"
+		This option will run --setup then execute the entire script again using the --all option with --debug-on and use the supplied token. 
 	
 	-s | --setup 
 		Run the software setup and check steps. This can take 1 - 5 minutes to execute.
@@ -62,7 +79,7 @@ Options:
 	NOTE: Token can be generated here: https://api.slack.com/web 
 	
 	-w | --bypass-warnings 
-		Automatically continue even if warnings occur during setup. \n"
+		Automatically continue even if warnings occur during setup."
 
 
 printf "Slack-Backup v%s by %s\n" "$version" "$author"
@@ -90,6 +107,7 @@ fetch_all_users=false
 fetch_users=false
 fetch_public=false
 fetch_private=false
+nike=false
 
 while [[ $# > 0 ]]
  do
@@ -157,6 +175,12 @@ while [[ $# > 0 ]]
 		-d|--debug-on)
 			debug_off=false;
 		;;
+		
+		--nike)
+			nike=true
+			slack_token="$2"
+			shift # past argument
+		;;
 
 		*) # unknown option
 		;;
@@ -170,7 +194,8 @@ done
 # check for input errors and fail
 if ( $help )
  then
-	printf "%s" "$usage"
+	clear	
+	printf "%s\n" "$usage" | more
 	exit 200
 else #prep the folders
 	directory="slack-backup_`date +%Y-%m-%d-%H.%M.%S`"
@@ -181,10 +206,18 @@ else #prep the folders
 	mkdir $debug/users
 fi
 
+if ( $nike )
+ then
+	"$0" --setup
+	"$0" --all --debug-on --slack-token "$slack_token"
+	exit 200
+fi
+
 if ( $setup )
  then
 	printf "Performing software updates/installs to make sure you have everything we need, then we'll get started.\n"
-		apt-get -y install php5-common php5-cli wget  1>$logs/setup1.log 2>&1
+
+		apt-get -y install php php-xml php-mbstring php-common php-cli wget  1>$logs/setup1.log 2>&1
 		wget -qO- https://deb.nodesource.com/setup_4.x | bash - 1>$logs/setup2.log 2>&1
 		apt-get -y install nodejs 1>$logs/setup3.log 2>&1
 		wget -qO- https://deb.nodesource.com/setup_6.x | bash - 1>$logs/setup4.log 2>&1
@@ -301,7 +334,7 @@ printf "done.\n"
 printf "Getting IntegrationLogs data..."
 	wget https://slack.com/api/team.integrationLogs.list?token=$slack_token -O "team.integrationLogs.json" 1>$logs/wget_meta03.log 2>&1
 	#if you are an admin then use this
-		#cat team.integrationLogs.json | sed 's/{\"ok\":true,\"members\"://1' |sed '$ s/.$//' > integration_logs.json
+		#cat team.integrationLogs.json | sed 's/{\"ok\":true,\"members\"://1' | sed '$ s/.$//' > integration_logs.json
 	#else use this default to create the blank file
 		#most users won't have slack-admin rights for this, check for an error and if it occured then just write a blank file "[\n]"
 		printf "[\n\n]" >> integration_logs.json
@@ -373,7 +406,7 @@ if ( $dm_do || $all )
 			dir="$directory/$dm"
 			mkdir $dir
 			slack-history-export --token $slack_token --username $dm --directory $dir 1>$logs/she_dm/$dm.log 2>&1
-	#printf "\nslack-history-export --token %s --username %s --directory %s 1>%s/she_dm/%s.log 2>&1\n" $slack_token $dm $dir $logs $dm
+			#printf "\nslack-history-export --token %s --username %s --directory %s 1>%s/she_dm/%s.log 2>&1\n" $slack_token $dm $dir $logs $dm
 
 			if [[ `ls -1 $dir | wc -l` -eq 0 ]]
 			 then
@@ -486,8 +519,8 @@ Channels Counts\t\t\tChecked  Downloaded
 \tDirect Messages:\t$rADIR\t$rDIR
 Time to Complete: $HOUR:$MIN:$SEC\n"
 
-printf "%s" "$REPORT"
-printf "%s" "$REPORT" > $directory/benchmark.log
+printf "$REPORT"
+printf "$REPORT" > $directory/benchmark.log
 ##################################
 
 exit 200
