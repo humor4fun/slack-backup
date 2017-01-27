@@ -22,9 +22,9 @@
 ##################################
 # environment variables
 START=$(date +%s)
-version="1.98"
+version="1.99"
 author="Chris Holt, @humor4fun"
-date="2017-01-25"
+date="2017-01-27"
 usage="Slack Backup by $author 
 	Version: $version 
 	Last updated date: $date 
@@ -68,6 +68,9 @@ Options:
 		\"Just Do It!\"
 		This option will run --setup then execute the entire script again using the --all option with --debug-on and use the supplied token. 
 	
+	--private-only TOKEN
+		This option will run execute the --fetch, then run private-groups and direct-messages lists.
+		
 	-s | --setup 
 		Run the software setup and check steps. This can take 1 - 5 minutes to execute.
 	
@@ -108,6 +111,7 @@ fetch_users=false
 fetch_public=false
 fetch_private=false
 nike=false
+priv_only=false
 
 while [[ $# > 0 ]]
  do
@@ -181,6 +185,15 @@ while [[ $# > 0 ]]
 			slack_token="$2"
 			shift # past argument
 		;;
+	
+		--private-only)
+			slack_token="$2"
+			fetch=true
+			dm_do=true
+			private_do=true
+			cont=true
+			shift
+		;;
 
 		*) # unknown option
 		;;
@@ -191,7 +204,7 @@ done
 
 
 ##################################
-# check for input errors and fail
+# check for input errors and fail, short-circuit runs and recursive commands
 if ( $help )
  then
 	clear	
@@ -302,6 +315,7 @@ fi
 ##################################
 # software prep
 printf "Setting up working environment..."
+	#wget "https://gist.githubusercontent.com/levelsio/122907e95956602e5c09/raw/6ea53ecfb936f4f0fbbcbb74bb7b6db5030ec64b/gistfile1.txt" -O $directory/slack-json-2-html.php 1>$logs/wget_tools1.log 2>&1	
 	wget "https://gist.githubusercontent.com/dharmastyle/5d1e8239c5684938db0b/raw/cf1afe32967c6b497ed1ed97ca4a8ab5ee3df953/slack-json-2-html.php" -O $directory/slack-json-2-html.php 1>$logs/wget_tools1.log 2>&1
 	chmod 777 $directory/slack-json-2-html.php
 printf "done.\n"
