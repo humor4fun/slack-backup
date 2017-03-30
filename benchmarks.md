@@ -88,3 +88,11 @@ Channels Counts			Checked  Downloaded
 	Direct Messages:	144	11
 Time to Complete: 0:1:49
 ```
+
+```
+Channels Counts			Checked  Downloaded
+	Private Groups:		17	1
+	Public Channels:	5091	1371
+	Direct Messages:	154	18
+Time to Complete: 5:28:15
+```
