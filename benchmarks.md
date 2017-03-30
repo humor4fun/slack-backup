@@ -96,3 +96,4 @@ Channels Counts			Checked  Downloaded
 	Direct Messages:	154	18
 Time to Complete: 5:28:15
 ```
+You'll notice that some of these recent results the `Checked` and `Downloaded` numbers do not match. This is caused by an administrative rule that `messages older than X days are deleted`, so while the channel still appears, messages are not retrievable by my API token since I do not have read access to the messages (user vs admin).
