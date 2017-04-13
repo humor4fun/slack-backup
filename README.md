@@ -35,6 +35,17 @@ Run a backup routine of all Public Channels, Private Groups and Direct Messages 
 Run a backup routine of the Public Channels specified in pc.list, Private Groups specified in pg.list, and Direct Messages for users specified in dm.list.
 `./slack-backup.sh --slack-token-file token --direct-messages dm.list --public-channels pc.list --private-groups pg.list`
 
+### Consider these
+Run full slack logs download
+```
+./slack-backup.sh --nike `cat token`
+```
+
+Run short slack logs download
+```
+./slack-backup.sh --private-only `cat token`
+```
+
 ## Options
 ```
 slack-backup.sh -t token [options]
