@@ -3,6 +3,17 @@ For those of us that like to log our chat history... No more will coworkers be a
 
 Cron-able script to use Slack APIs to archive all messages. 
 
+## System Requirements
+When I write bash scripts, I use a Kali linux VM that I try to keep as vanilla as possible, especially for new scripts so that I can catch all of the tools/packages that will be needed for the `--setup` switch. This script will almost certainly NOT function on MacOSX and will need modification to run on non Debian *nix machines.
+
+Recommended: `Debian-Based Linux with a 4.9 kernel` 
+
+When I wrote this script it was on a 2015 build of Kali, but currently I am working off of the `2016.2` version.
+```
+root@kali:~# uname -a
+Linux kali 4.9.0-kali3-amd64 #1 SMP Debian 4.9.16-1kali1 (2017-03-24) x86_64 GNU/Linux
+```
+
 ## Installation
 1. Save slack-backup.sh to a file
 2. `chmod 777 slack-backup.sh`
