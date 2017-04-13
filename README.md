@@ -86,6 +86,9 @@ Options:
 		\"Just Do It!\"
 		This option will run --setup then execute the entire script again using the --all option with --debug-on and use the supplied token. 
 	
+	--private-only TOKEN
+		This option will run execute the --fetch, then run private-groups and direct-messages lists.
+	
 	-s | --setup 
 		Run the software setup and check steps. This can take 1 - 5 minutes to execute.
 	
