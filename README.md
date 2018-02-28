@@ -17,7 +17,7 @@ Linux kali 4.9.0-kali3-amd64 #1 SMP Debian 4.9.16-1kali1 (2017-03-24) x86_64 GNU
 ## Installation
 1. Save slack-backup.sh to a file
 2. `chmod 777 slack-backup.sh`
-3. Get a Slack API token from your account-> [Can be generated here] (https://api.slack.com/web)
+3. Get a Slack API token from your account-> [Can be generated here] (https://api.slack.com/custom-integrations/legacy-tokens)
 4. Put that token into a file and save it
 5. Execute the setup to make sure you have all the required libraries `./slack-backup.sh --setup`
 
