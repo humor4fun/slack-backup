@@ -340,7 +340,7 @@ printf "done.\n"
 
 printf "Getting Users meta data..."
 	wget https://slack.com/api/users.list?token=$slack_token -O "users.list.json" 1>$logs/wget_meta02.log 2>&1
-	cat users.list.json | sed 's/{\"ok\":true,\"members\"://1' | sed '$ s/.$//' > users.json
+	cat users.list.json | sed 's/{\"ok\":true,\"members\"://1' | sed '$ s/.$//' | sed 's/\,\"cache_ts\":[0-9]*$//' > users.json
 	mv users.list.json $debug
 	mv users.json $directory
 printf "done.\n"
